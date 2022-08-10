@@ -1,1 +1,1 @@
-# scala-js-linker-bundler
+# scalajs-linker-bundler
