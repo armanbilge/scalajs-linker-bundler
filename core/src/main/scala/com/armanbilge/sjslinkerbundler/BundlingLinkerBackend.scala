@@ -34,6 +34,8 @@ import java.util.Arrays
 import java.util.Collections
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.collection.mutable
+import org.scalajs.linker.interface.unstable.OutputDirectoryImpl
 
 final class BundlingLinkerBackend(
     linkerConfig: StandardConfig,
@@ -55,47 +57,53 @@ final class BundlingLinkerBackend(
   ): Future[Report] = {
     val memOutput = MemOutputDirectory()
     standard.emit(moduleSet, memOutput, logger).map { report =>
-      val publicModules =
-        report.publicModules.toList.flatMap(m => memOutput.content(m.jsFileName).map(m -> _))
+      val modules = moduleSet.modules.map(m => m.id -> m).toMap
+      val chunks = mutable.Map[ModuleSet.ModuleID, JSChunk]()
 
-      val publicModuleNames = report.publicModules.map(_.jsFileName).toSet
-      val internalFiles = memOutput
-        .fileNames()
-        .filterNot(publicModuleNames.contains(_))
-        .flatMap(fn => memOutput.content(fn).map(fn -> _))
+      def getOrCreateChunk(moduleID: ModuleSet.ModuleID): JSChunk = {
+        chunks.getOrElseUpdate(
+          moduleID, {
 
-      val internalChunk = new JSChunk("internal")
-      internalFiles.foreach {
-        case (fn, content) =>
-          internalChunk.add(
-            SourceFile
-              .builder()
-              .withPath(fn)
-              .withContent(new ByteArrayInputStream(content))
-              .build()
-          )
+            val module = modules(moduleID)
+            val ch = new JSChunk(moduleID.id)
+
+            module.internalDependencies.foreach { mid =>
+              ch.addDependency(getOrCreateChunk(mid))
+            }
+
+            // TODO
+            // module.externalDependencies
+
+            memOutput
+              .fileNames()
+              .filter(_.startsWith(moduleID.id))
+              .flatMap(fn => memOutput.content(fn).map(fn -> _))
+              .foreach {
+                case (fn, content) =>
+                  ch.add(
+                    SourceFile
+                      .builder()
+                      .withPath(fn)
+                      .withContent(new ByteArrayInputStream(content))
+                      .build()
+                  )
+              }
+
+            ch
+          }
+        )
       }
 
-      val publicChunks = publicModules.map {
-        case (mod, content) =>
-          val ch = new JSChunk(mod.moduleID)
-          ch.addDependency(internalChunk)
-          ch.add(
-            SourceFile
-              .builder()
-              .withPath(mod.jsFileName)
-              .withContent(new ByteArrayInputStream(content))
-              .build()
-          )
-          ch
-      }
+      moduleSet.modules.foreach(module => getOrCreateChunk(module.id))
 
       val compiler = new Compiler
       compiler.compileModules(
         Collections.emptyList[SourceFile],
-        Arrays.asList((publicChunks :+ internalChunk): _*),
+        Arrays.asList(chunks.values.toSeq: _*),
         compilerOptions
       )
+
+      val outputImpl = OutputDirectoryImpl.fromOutputDirectory(output)
 
       report
     }
