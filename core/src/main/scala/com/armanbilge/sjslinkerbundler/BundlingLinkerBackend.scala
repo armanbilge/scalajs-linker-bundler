@@ -36,6 +36,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.collection.mutable
 import org.scalajs.linker.interface.unstable.OutputDirectoryImpl
+import java.nio.ByteBuffer
 
 final class BundlingLinkerBackend(
     linkerConfig: StandardConfig,
@@ -56,7 +57,7 @@ final class BundlingLinkerBackend(
       implicit ec: ExecutionContext
   ): Future[Report] = {
     val memOutput = MemOutputDirectory()
-    standard.emit(moduleSet, memOutput, logger).map { report =>
+    standard.emit(moduleSet, memOutput, logger).flatMap { report =>
       val modules = moduleSet.modules.map(m => m.id -> m).toMap
       val chunks = mutable.Map[ModuleSet.ModuleID, JSChunk]()
 
@@ -104,8 +105,15 @@ final class BundlingLinkerBackend(
       )
 
       val outputImpl = OutputDirectoryImpl.fromOutputDirectory(output)
+      val src = compiler.toSource()
+      // val srcMap = compiler.getSourceMap()
+      val publicModule = report.publicModules.head
 
-      report
+      val result = outputImpl
+        .writeFull(publicModule.jsFileName, ByteBuffer.wrap(src.getBytes()))
+        .map(_ => report)
+
+      result
     }
   }
 
