@@ -92,7 +92,7 @@ final class BundlingLinkerBackend(
 
       val compiler = new Compiler
       compiler.compileModules(
-        Collections.emptyList,
+        Collections.emptyList[SourceFile],
         Arrays.asList((publicChunks :+ internalChunk): _*),
         compilerOptions
       )
