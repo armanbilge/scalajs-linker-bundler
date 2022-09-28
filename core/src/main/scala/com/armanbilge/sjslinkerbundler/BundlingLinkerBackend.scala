@@ -24,19 +24,18 @@ import org.scalajs.linker.MemOutputDirectory
 import org.scalajs.linker.interface.OutputDirectory
 import org.scalajs.linker.interface.Report
 import org.scalajs.linker.interface.StandardConfig
+import org.scalajs.linker.interface.unstable.OutputDirectoryImpl
 import org.scalajs.linker.standard.LinkerBackend
 import org.scalajs.linker.standard.ModuleSet
 import org.scalajs.linker.standard.StandardLinkerBackend
 import org.scalajs.logging.Logger
 
-import java.io.ByteArrayInputStream
+import java.nio.ByteBuffer
 import java.util.Arrays
 import java.util.Collections
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.collection.mutable
-import org.scalajs.linker.interface.unstable.OutputDirectoryImpl
-import java.nio.ByteBuffer
 
 final class BundlingLinkerBackend(
     linkerConfig: StandardConfig
@@ -82,12 +81,11 @@ final class BundlingLinkerBackend(
               .flatMap(fn => memOutput.content(fn).map(fn -> _))
               .foreach {
                 case (fn, content) =>
+                  val fixedContent =
+                    new String(content).replace("\\uff3f": CharSequence, "__": CharSequence)
+
                   ch.add(
-                    SourceFile
-                      .builder()
-                      .withPath(fn)
-                      .withContent(new ByteArrayInputStream(content))
-                      .build()
+                    SourceFile.builder().withPath(fn).withContent(fixedContent).build()
                   )
               }
 
