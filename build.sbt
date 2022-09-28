@@ -35,5 +35,16 @@ lazy val sbtPlugin = project
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
     buildInfoPackage := "com.armanbilge.sbt.sjslinkerbundler",
     buildInfoKeys += organization,
-    buildInfoKeys += "coreModule" -> (core2_12 / moduleName).value
+    buildInfoKeys += "coreModule" -> (core2_12 / moduleName).value,
+    scriptedLaunchOpts := {
+      scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    },
+    Test / test := {
+      scripted.toTask("").value
+    },
+    scriptedBufferLog := false,
+    scriptedLaunchOpts := {
+      scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    },
+    scripted := scripted.dependsOn(core2_12 / publishLocal).evaluated
   )
