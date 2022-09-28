@@ -39,9 +39,10 @@ import org.scalajs.linker.interface.unstable.OutputDirectoryImpl
 import java.nio.ByteBuffer
 
 final class BundlingLinkerBackend(
-    linkerConfig: StandardConfig,
-    compilerOptions: CompilerOptions
+    linkerConfig: StandardConfig
 ) extends LinkerBackend {
+
+  private[this] val compilerOptions = new CompilerOptions
 
   compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
 

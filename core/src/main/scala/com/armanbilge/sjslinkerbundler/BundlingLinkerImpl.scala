@@ -16,7 +16,6 @@
 
 package com.armanbilge.sjslinkerbundler
 
-import com.google.javascript.jscomp.CompilerOptions
 import org.scalajs.linker.ClearableLinker
 import org.scalajs.linker.interface
 import org.scalajs.linker.interface.Linker
@@ -26,16 +25,15 @@ import org.scalajs.linker.standard.StandardLinkerImpl
 
 object BundlingLinkerImpl {
 
-  def linker(config: StandardConfig, compilerOptions: CompilerOptions): Linker = {
+  def linker(config: StandardConfig): Linker = {
     val frontend = StandardLinkerFrontend(config)
-    val backend = new BundlingLinkerBackend(config, compilerOptions)
+    val backend = new BundlingLinkerBackend(config)
     StandardLinkerImpl(frontend, backend)
   }
 
   def clearableLinker(
-      config: StandardConfig,
-      compilerOptions: CompilerOptions
+      config: StandardConfig
   ): interface.ClearableLinker =
-    ClearableLinker(() => linker(config, compilerOptions), config.batchMode)
+    ClearableLinker(() => linker(config), config.batchMode)
 
 }

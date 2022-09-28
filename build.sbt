@@ -6,11 +6,14 @@ ThisBuild / developers += tlGitHubDev("armanbilge", "Arman Bilge")
 ThisBuild / startYear := Some(2022)
 ThisBuild / tlSonatypeUseLegacyHost := false
 
-ThisBuild / crossScalaVersions := Seq("2.12.16", "2.13.8")
+ThisBuild / githubWorkflowBuildSbtStepPreamble := Seq()
 
-lazy val root = tlCrossRootProject.aggregate(core, example)
+val scala2_12 = "2.12.16"
+val scala2_13 = "2.13.8"
 
-lazy val core = project
+lazy val root = project.in(file(".")).aggregate(core2_12, core2_13, sbtPlugin)
+
+lazy val core = projectMatrix
   .in(file("core"))
   .settings(
     name := "scalajs-linker-bundler",
@@ -18,33 +21,17 @@ lazy val core = project
       "org.scala-js" %% "scalajs-linker" % scalaJSVersion
     )
   )
+  .defaultAxes(VirtualAxis.jvm)
+  .jvmPlatform(scalaVersions = Seq(scala2_12, scala2_13))
 
-import com.armanbilge.sjslinkerbundler.BundlingLinkerImpl
-import com.google.javascript.jscomp.CompilerOptions
-import org.scalajs.sbtplugin.LinkerImpl
-import org.scalajs.linker.interface._
+lazy val core2_12 = core.jvm(scala2_12)
+lazy val core2_13 = core.jvm(scala2_13)
 
-lazy val example = project
-  .in(file("example"))
+lazy val sbtPlugin = project
+  .in(file("sbt-plugin"))
+  .enablePlugins(SbtPlugin, BuildInfoPlugin)
   .settings(
-    Compile / fastLinkJS / scalaJSLinker := {
-      val config = (Compile / fastLinkJS / scalaJSLinkerConfig).value
-      val box = (Compile / fastLinkJS / scalaJSLinkerBox).value
-      val linkerImpl = (Compile / fastLinkJS / scalaJSLinkerImpl).value
-
-      box.ensure {
-        BundlingLinkerImpl.clearableLinker(config, new CompilerOptions)
-      }
-    },
-    scalaJSUseMainModuleInitializer := true,
-    scalaJSLinkerImpl := {
-      val cp = (scalaJSLinkerImpl / fullClasspath).value
-      scalaJSLinkerImplBox.value.ensure {
-        new LinkerImpl.Forwarding(LinkerImpl.reflect(Attributed.data(cp))) {
-          override def clearableLinker(cfg: StandardConfig): ClearableLinker =
-            BundlingLinkerImpl.clearableLinker(cfg, new CompilerOptions)
-        }
-      }
-    }
+    name := "sbt-scalajs-linker-bundler",
+    addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
+    buildInfoPackage := "com.armanbilge.sbt.sjslinkerbundler"
   )
-  .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
