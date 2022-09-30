@@ -8,6 +8,17 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / githubWorkflowBuildSbtStepPreamble := Seq()
 
+ThisBuild / githubWorkflowBuildPreamble ++= Seq(
+  WorkflowStep.Use(
+    UseRef.Public("actions", "setup-node", "v3"),
+    name = Some("Setup Node.js"),
+    params = Map("node-version" -> "16", "cache" -> "npm")
+  ),
+  WorkflowStep.Run(
+    List("npm install")
+  )
+)
+
 val scala2_12 = "2.12.16"
 val scala2_13 = "2.13.8"
 
@@ -36,15 +47,16 @@ lazy val sbtPlugin = project
     buildInfoPackage := "com.armanbilge.sbt.sjslinkerbundler",
     buildInfoKeys += organization,
     buildInfoKeys += "coreModule" -> (core2_12 / moduleName).value,
-    scriptedLaunchOpts := {
-      scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
-    },
     Test / test := {
       scripted.toTask("").value
     },
     scriptedBufferLog := false,
-    scriptedLaunchOpts := {
-      scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value)
+    scriptedLaunchOpts ++= {
+      Seq(
+        "-Xmx1024M",
+        s"-Dplugin.version=${version.value}",
+        s"-Dnode.modules=${((LocalRootProject / baseDirectory).value / "node_modules").getAbsolutePath}"
+      )
     },
     scripted := scripted.dependsOn(core2_12 / publishLocal).evaluated
   )

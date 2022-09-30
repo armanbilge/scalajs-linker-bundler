@@ -31,6 +31,9 @@ import org.scalajs.linker.standard.StandardLinkerBackend
 import org.scalajs.logging.Logger
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Arrays
 import java.util.Collections
 import scala.collection.mutable
@@ -38,7 +41,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 final class BundlingLinkerBackend(
-    linkerConfig: StandardConfig
+    linkerConfig: StandardConfig,
+    nodeModules: Option[Path]
 ) extends LinkerBackend {
 
   private[this] val compilerOptions = new CompilerOptions
@@ -61,6 +65,14 @@ final class BundlingLinkerBackend(
       val modules = moduleSet.modules.map(m => m.id -> m).toMap
       val chunks = mutable.Map[ModuleSet.ModuleID, JSChunk]()
 
+      val nodeModulesChunk = nodeModules.map { nodeModulesPath =>
+        val ch = new JSChunk("node_modules")
+        Files.walk(nodeModulesPath).forEach { path =>
+          ch.add(SourceFile.fromPath(path, StandardCharsets.UTF_8))
+        }
+        ch
+      }
+
       def getOrCreateChunk(moduleID: ModuleSet.ModuleID): JSChunk = {
         chunks.getOrElseUpdate(
           moduleID, {
@@ -68,12 +80,11 @@ final class BundlingLinkerBackend(
             val module = modules(moduleID)
             val ch = new JSChunk(moduleID.id)
 
+            nodeModulesChunk.foreach(ch.addDependency(_))
+
             module.internalDependencies.foreach { mid =>
               ch.addDependency(getOrCreateChunk(mid))
             }
-
-            // TODO
-            // module.externalDependencies
 
             memOutput
               .fileNames()

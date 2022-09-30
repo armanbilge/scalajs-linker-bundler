@@ -25,6 +25,8 @@ import org.scalajs.sbtplugin.ScalaJSPlugin
 import org.scalajs.sbtplugin.Stage
 import sbt._
 
+import java.nio.file.Path
+
 import Keys._
 import ScalaJSPlugin.autoImport._
 
@@ -38,15 +40,22 @@ object ScalaJSLinkerBundlerPlugin extends AutoPlugin {
     private val clearableLinkerMethod = {
       Class
         .forName("com.armanbilge.sjslinkerbundler.BundlingLinkerImpl", true, loader)
-        .getMethod("clearableLinker", classOf[StandardConfig])
+        .getMethod("clearableLinker", classOf[StandardConfig], classOf[Option[Path]])
     }
 
-    def bundlingLinker(config: StandardConfig): ClearableLinker = {
-      clearableLinkerMethod.invoke(null, config).asInstanceOf[ClearableLinker]
+    def bundlingLinker(config: StandardConfig, nodeModules: Option[Path]): ClearableLinker = {
+      clearableLinkerMethod.invoke(null, config, nodeModules).asInstanceOf[ClearableLinker]
     }
   }
 
   override def requires: Plugins = ScalaJSPlugin
+
+  object autoImport {
+    lazy val linkerBundlerNodeModules =
+      settingKey[Option[File]]("Path to `node_modules/` directory")
+  }
+
+  import autoImport._
 
   override def globalSettings: Seq[Setting[_]] = Seq(
     scalaJSLinkerImpl / fullClasspath := {
@@ -75,6 +84,10 @@ object ScalaJSLinkerBundlerPlugin extends AutoPlugin {
     }
   )
 
+  override def buildSettings: Seq[Setting[_]] = Seq(
+    linkerBundlerNodeModules := Some((LocalRootProject / baseDirectory).value / "node_modules")
+  )
+
   override def projectSettings: Seq[Setting[_]] =
     inConfig(Compile)(configSettings) ++ inConfig(Test)(configSettings)
 
@@ -92,9 +105,12 @@ object ScalaJSLinkerBundlerPlugin extends AutoPlugin {
       val config = (key / scalaJSLinkerConfig).value
       val box = (key / scalaJSLinkerBox).value
       val linkerImpl = (key / scalaJSLinkerImpl).value
+      val nodeModules = (key / linkerBundlerNodeModules).value
 
       box.ensure {
-        linkerImpl.asInstanceOf[BundlingLinkerImpl].bundlingLinker(config)
+        linkerImpl
+          .asInstanceOf[BundlingLinkerImpl]
+          .bundlingLinker(config, nodeModules.map(_.toPath))
       }
     }
   )
