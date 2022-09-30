@@ -22,6 +22,7 @@ import com.google.javascript.jscomp.JSChunk
 import com.google.javascript.jscomp.SourceFile
 import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
+import org.scalajs.linker.interface.ESVersion
 import org.scalajs.linker.interface.OutputDirectory
 import org.scalajs.linker.interface.Report
 import org.scalajs.linker.interface.StandardConfig
@@ -31,8 +32,8 @@ import org.scalajs.linker.standard.ModuleSet
 import org.scalajs.linker.standard.StandardLinkerBackend
 import org.scalajs.logging.Logger
 
+import java.io.FileInputStream
 import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
@@ -51,7 +52,11 @@ final class BundlingLinkerBackend(
   private[this] val compilerOptions = new CompilerOptions
 
   compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
+  compilerOptions.setProcessCommonJSModules(true)
   compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
+  compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
+    case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
+  })
 
   private[this] val standard = StandardLinkerBackend(linkerConfig)
 
@@ -81,7 +86,13 @@ final class BundlingLinkerBackend(
         }
 
         Files.find(nodeModulesPath, Int.MaxValue, matcher).forEach { path =>
-          ch.add(SourceFile.fromPath(path, StandardCharsets.UTF_8))
+          ch.add(
+            SourceFile
+              .builder()
+              .withContent(new FileInputStream(path.toFile))
+              .withPath(s"node_modules/${nodeModulesPath.relativize(path).toString}")
+              .build()
+          )
         }
 
         ch

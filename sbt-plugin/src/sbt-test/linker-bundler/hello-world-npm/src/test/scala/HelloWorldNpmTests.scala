@@ -3,9 +3,9 @@ import org.junit.Test
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 
-object HelloWorldNpm {
-  @js.native
-  @JSImport("hello-world-npm")
+@js.native
+@JSImport("hello-world-npm")
+object HelloWorldNpm extends js.Object {
   def helloWorld(): String = js.native
 }
 
