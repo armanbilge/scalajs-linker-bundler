@@ -20,6 +20,7 @@ import com.google.javascript.jscomp.Compiler
 import com.google.javascript.jscomp.CompilerOptions
 import com.google.javascript.jscomp.JSChunk
 import com.google.javascript.jscomp.SourceFile
+import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
 import org.scalajs.linker.interface.OutputDirectory
 import org.scalajs.linker.interface.Report
@@ -34,8 +35,10 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.Arrays
 import java.util.Collections
+import java.util.function.BiPredicate
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -47,6 +50,7 @@ final class BundlingLinkerBackend(
 
   private[this] val compilerOptions = new CompilerOptions
 
+  compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
   compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
 
   private[this] val standard = StandardLinkerBackend(linkerConfig)
@@ -67,9 +71,19 @@ final class BundlingLinkerBackend(
 
       val nodeModulesChunk = nodeModules.map { nodeModulesPath =>
         val ch = new JSChunk("node_modules")
-        Files.walk(nodeModulesPath).forEach { path =>
+
+        val matcher: BiPredicate[Path, BasicFileAttributes] = { (path, attr) =>
+          def checkExts(fn: String) =
+            List(".js", ".cjs", ".mjs").exists(fn.endsWith(_))
+
+          attr.isRegularFile() &&
+          (path.endsWith("package.json") || checkExts(path.getFileName.toString.toLowerCase))
+        }
+
+        Files.find(nodeModulesPath, Int.MaxValue, matcher).forEach { path =>
           ch.add(SourceFile.fromPath(path, StandardCharsets.UTF_8))
         }
+
         ch
       }
 
@@ -110,7 +124,7 @@ final class BundlingLinkerBackend(
       val compiler = new Compiler
       compiler.compileModules(
         Collections.emptyList[SourceFile],
-        Arrays.asList(chunks.values.toSeq: _*),
+        Arrays.asList((nodeModulesChunk.toList ::: chunks.values.toList): _*),
         compilerOptions
       )
 
