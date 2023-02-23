@@ -125,7 +125,8 @@ final class BundlingLinkerBackend(
 
       moduleSet.modules.foreach(module => getOrCreateChunk(module.id))
 
-      val entrypoints = memOutput.fileNames().map(ModuleIdentifier.forFile(_))
+      val entrypoints =
+        memOutput.fileNames().filterNot(_.endsWith(".map")).map(ModuleIdentifier.forFile(_))
 
       val compiler = new Compiler
 
