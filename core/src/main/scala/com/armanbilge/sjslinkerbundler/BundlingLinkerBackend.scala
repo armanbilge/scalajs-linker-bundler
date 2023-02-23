@@ -137,13 +137,6 @@ final class BundlingLinkerBackend(
         DependencyOptions.pruneForEntryPoints(Arrays.asList(entrypoints.toArray: _*))
       )
       compilerOptions.setProcessCommonJSModules(true)
-      linkerConfig.moduleKind match {
-        case ModuleKind.NoModule =>
-          compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.GLOBAL_NAMESPACE)
-        case _ => // otherwise force ES modules
-          compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
-      }
-
       compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
         case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
       })
