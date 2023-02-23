@@ -74,7 +74,7 @@ final class BundlingLinkerBackend(
       val modules = moduleSet.modules.map(m => m.id -> m).toMap
       val chunks = mutable.Map[ModuleSet.ModuleID, JSChunk]()
 
-      val nodeModulesChunk = nodeModules.map { nodeModulesPath =>
+      val nodeModulesChunk = nodeModules.filter(Files.exists(_)).map { nodeModulesPath =>
         val ch = new JSChunk("node_modules")
 
         val matcher: BiPredicate[Path, BasicFileAttributes] = { (path, attr) =>
