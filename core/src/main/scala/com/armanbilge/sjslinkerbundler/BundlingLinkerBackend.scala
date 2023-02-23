@@ -18,7 +18,9 @@ package com.armanbilge.sjslinkerbundler
 
 import com.google.javascript.jscomp.Compiler
 import com.google.javascript.jscomp.CompilerOptions
+import com.google.javascript.jscomp.DependencyOptions
 import com.google.javascript.jscomp.JSChunk
+import com.google.javascript.jscomp.ModuleIdentifier
 import com.google.javascript.jscomp.SourceFile
 import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
@@ -48,15 +50,6 @@ final class BundlingLinkerBackend(
     linkerConfig: StandardConfig,
     nodeModules: Option[Path]
 ) extends LinkerBackend {
-
-  private[this] val compilerOptions = new CompilerOptions
-
-  compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
-  compilerOptions.setProcessCommonJSModules(true)
-  compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
-  compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
-    case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
-  })
 
   private[this] val standard = StandardLinkerBackend(linkerConfig)
 
@@ -132,7 +125,21 @@ final class BundlingLinkerBackend(
 
       moduleSet.modules.foreach(module => getOrCreateChunk(module.id))
 
+      val entrypoints = memOutput.fileNames().map(ModuleIdentifier.forFile(_))
+
       val compiler = new Compiler
+
+      val compilerOptions = new CompilerOptions
+      compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
+      compilerOptions.setDependencyOptions(
+        DependencyOptions.pruneForEntryPoints(Arrays.asList(entrypoints.toArray: _*))
+      )
+      compilerOptions.setProcessCommonJSModules(true)
+      compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
+      compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
+        case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
+      })
+
       compiler.compileModules(
         Collections.emptyList[SourceFile],
         Arrays.asList((nodeModulesChunk.toList ::: chunks.values.toList): _*),
