@@ -126,6 +126,8 @@ final class BundlingLinkerBackend(
       moduleSet.modules.foreach(module => getOrCreateChunk(module.id))
 
       val entrypoints = memOutput.fileNames().map(ModuleIdentifier.forFile(_))
+      println(memOutput.fileNames())
+      println(entrypoints)
 
       val compiler = new Compiler
 
@@ -140,19 +142,24 @@ final class BundlingLinkerBackend(
         case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
       })
 
+      val allChunks = nodeModulesChunk.toList ::: chunks.values.toList
       compiler.compileModules(
         Collections.emptyList[SourceFile],
-        Arrays.asList((nodeModulesChunk.toList ::: chunks.values.toList): _*),
+        Arrays.asList(allChunks: _*),
         compilerOptions
       )
 
-      val outputImpl = OutputDirectoryImpl.fromOutputDirectory(output)
-      val src = compiler.toSource()
-      // val srcMap = compiler.getSourceMap()
-      val publicModule = report.publicModules.head
+      println(compiler.getResult().transpiledFiles)
 
-      val result = outputImpl
-        .writeFull(publicModule.jsFileName, ByteBuffer.wrap(src.getBytes()))
+      val outputImpl = OutputDirectoryImpl.fromOutputDirectory(output)
+
+      val result = Future
+        .traverse(allChunks) { chunk =>
+          val fn = chunk.getName + ".js"
+          println(compiler.getScriptNode(fn))
+          val src = compiler.toSource(compiler.getScriptNode(fn))
+          outputImpl.writeFull(fn, ByteBuffer.wrap(src.getBytes()))
+        }
         .map(_ => report)
 
       result
