@@ -140,9 +140,8 @@ final class BundlingLinkerBackend(
       linkerConfig.moduleKind match {
         case ModuleKind.NoModule =>
           compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.GLOBAL_NAMESPACE)
-        case ModuleKind.ESModule =>
+        case _ => // otherwise force ES modules
           compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
-        case kind => sys.error(s"Unsupported module kind: $kind")
       }
 
       compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
