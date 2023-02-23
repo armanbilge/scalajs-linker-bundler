@@ -25,6 +25,7 @@ import com.google.javascript.jscomp.SourceFile
 import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
 import org.scalajs.linker.interface.ESVersion
+import org.scalajs.linker.interface.ModuleKind
 import org.scalajs.linker.interface.OutputDirectory
 import org.scalajs.linker.interface.Report
 import org.scalajs.linker.interface.StandardConfig
@@ -136,7 +137,14 @@ final class BundlingLinkerBackend(
         DependencyOptions.pruneForEntryPoints(Arrays.asList(entrypoints.toArray: _*))
       )
       compilerOptions.setProcessCommonJSModules(true)
-      compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
+      linkerConfig.moduleKind match {
+        case ModuleKind.NoModule =>
+          compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.GLOBAL_NAMESPACE)
+        case ModuleKind.ESModule =>
+          compilerOptions.setChunkOutputType(CompilerOptions.ChunkOutputType.ES_MODULES)
+        case kind => sys.error(s"Unsupported module kind: $kind")
+      }
+
       compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
         case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
       })
