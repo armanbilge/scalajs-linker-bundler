@@ -25,7 +25,6 @@ import com.google.javascript.jscomp.SourceFile
 import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
 import org.scalajs.linker.interface.ESVersion
-import org.scalajs.linker.interface.ModuleKind
 import org.scalajs.linker.interface.OutputDirectory
 import org.scalajs.linker.interface.Report
 import org.scalajs.linker.interface.StandardConfig
