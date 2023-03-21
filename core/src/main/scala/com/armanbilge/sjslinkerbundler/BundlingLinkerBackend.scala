@@ -22,6 +22,7 @@ import com.google.javascript.jscomp.DependencyOptions
 import com.google.javascript.jscomp.JSChunk
 import com.google.javascript.jscomp.ModuleIdentifier
 import com.google.javascript.jscomp.SourceFile
+import com.google.javascript.jscomp.SortingErrorManager
 import com.google.javascript.jscomp.deps.ModuleLoader.ResolutionMode
 import org.scalajs.linker.MemOutputDirectory
 import org.scalajs.linker.interface.ESVersion
@@ -41,6 +42,7 @@ import java.nio.file.Path
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.Arrays
 import java.util.Collections
+import java.util.HashSet
 import java.util.function.BiPredicate
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -129,6 +131,11 @@ final class BundlingLinkerBackend(
         memOutput.fileNames().filterNot(_.endsWith(".map")).map(ModuleIdentifier.forFile(_))
 
       val compiler = new Compiler
+      compiler.setErrorManager(
+        new SortingErrorManager(
+          new HashSet(Arrays.asList(new LoggerErrorReportGenerator(logger)))
+        )
+      )
 
       val compilerOptions = new CompilerOptions
       compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
