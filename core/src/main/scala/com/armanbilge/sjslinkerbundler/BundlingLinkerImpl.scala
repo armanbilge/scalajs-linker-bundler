@@ -23,17 +23,20 @@ import org.scalajs.linker.interface.StandardConfig
 import org.scalajs.linker.standard.StandardLinkerFrontend
 import org.scalajs.linker.standard.StandardLinkerImpl
 
+import java.nio.file.Path
+
 object BundlingLinkerImpl {
 
-  def linker(config: StandardConfig): Linker = {
+  def linker(config: StandardConfig, nodeModules: Option[Path]): Linker = {
     val frontend = StandardLinkerFrontend(config)
-    val backend = new BundlingLinkerBackend(config)
+    val backend = new BundlingLinkerBackend(config, nodeModules)
     StandardLinkerImpl(frontend, backend)
   }
 
   def clearableLinker(
-      config: StandardConfig
+      config: StandardConfig,
+      nodeModules: Option[Path]
   ): interface.ClearableLinker =
-    ClearableLinker(() => linker(config), config.batchMode)
+    ClearableLinker(() => linker(config, nodeModules), config.batchMode)
 
 }
