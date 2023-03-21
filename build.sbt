@@ -20,7 +20,7 @@ ThisBuild / githubWorkflowBuildPreamble ++= Seq(
 )
 
 val scala2_12 = "2.12.16"
-val scala2_13 = "2.13.8"
+val scala2_13 = "2.13.10"
 
 lazy val root = project.in(file(".")).aggregate(core2_12, core2_13, sbtPlugin)
 
