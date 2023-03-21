@@ -64,7 +64,7 @@ object ScalaJSLinkerBundlerPlugin extends AutoPlugin {
       val retrieveDir = s.cacheDirectory / "scalajs-linker-bundler"
       val lm = (scalaJSLinkerImpl / dependencyResolution).value
       val dummyModuleID =
-        BuildInfo.organization %% "scalajs-linker-bundler-and-scalajs-linker" % s"${BuildInfo.version}/$scalaJSVersion"
+        BuildInfo.organization %% "scalajs-linker-bundler-and-scalajs-linker" % s"${BuildInfo.version}-$scalaJSVersion"
       val dependencies = Vector(
         // Load our linker back-end
         BuildInfo.organization %% BuildInfo.coreModule % BuildInfo.version,
