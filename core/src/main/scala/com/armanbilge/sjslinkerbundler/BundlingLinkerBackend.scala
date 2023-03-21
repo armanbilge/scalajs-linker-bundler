@@ -132,6 +132,7 @@ final class BundlingLinkerBackend(
 
       val compilerOptions = new CompilerOptions
       compilerOptions.setModuleResolutionMode(ResolutionMode.NODE)
+      compilerOptions.setModuleRoots(Collections.emptyList[String])
       compilerOptions.setDependencyOptions(
         DependencyOptions.pruneForEntryPoints(Arrays.asList(entrypoints.toArray: _*))
       )
