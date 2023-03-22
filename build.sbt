@@ -22,7 +22,8 @@ ThisBuild / githubWorkflowBuildPreamble ++= Seq(
 val scala2_12 = "2.12.17"
 val scala2_13 = "2.13.10"
 
-lazy val root = project.in(file(".")).aggregate(core2_12, core2_13, sbtPlugin)
+lazy val root =
+  project.in(file(".")).aggregate(core2_12, core2_13, sbtPlugin).enablePlugins(NoPublishPlugin)
 
 lazy val core = projectMatrix
   .in(file("core"))
@@ -45,7 +46,7 @@ lazy val sbtPlugin = project
     name := "sbt-scalajs-linker-bundler",
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
     buildInfoPackage := "com.armanbilge.sbt.sjslinkerbundler",
-    buildInfoKeys += organization,
+    buildInfoKeys ++= Seq(organization, scalaBinaryVersion),
     buildInfoKeys += "coreModule" -> (core2_12 / moduleName).value,
     Test / test := {
       scripted.toTask("").value
