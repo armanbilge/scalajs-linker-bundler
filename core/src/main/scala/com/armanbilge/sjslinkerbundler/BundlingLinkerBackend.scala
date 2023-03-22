@@ -146,6 +146,12 @@ final class BundlingLinkerBackend(
       compilerOptions.setProcessCommonJSModules(true)
       compilerOptions.setLanguage(linkerConfig.esFeatures.esVersion match {
         case ESVersion.ES2015 => CompilerOptions.LanguageMode.ECMASCRIPT_2015
+        case ESVersion.ES2016 => CompilerOptions.LanguageMode.ECMASCRIPT_2016
+        case ESVersion.ES2017 => CompilerOptions.LanguageMode.ECMASCRIPT_2017
+        case ESVersion.ES2018 => CompilerOptions.LanguageMode.ECMASCRIPT_2018
+        case ESVersion.ES2019 => CompilerOptions.LanguageMode.ECMASCRIPT_2019
+        case ESVersion.ES2020 => CompilerOptions.LanguageMode.ECMASCRIPT_2020
+        case ESVersion.ES2021 => CompilerOptions.LanguageMode.ECMASCRIPT_2021
       })
 
       compiler.compileModules(
