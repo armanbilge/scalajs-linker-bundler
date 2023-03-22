@@ -67,9 +67,9 @@ object ScalaJSLinkerBundlerPlugin extends AutoPlugin {
         BuildInfo.organization %% "scalajs-linker-bundler-and-scalajs-linker" % s"${BuildInfo.version}-$scalaJSVersion"
       val dependencies = Vector(
         // Load our linker back-end
-        BuildInfo.organization %% BuildInfo.coreModule % BuildInfo.version,
+        BuildInfo.organization % s"${BuildInfo.coreModule}_${BuildInfo.scalaBinaryVersion}" % BuildInfo.version,
         // And force-bump the dependency on scalajs-linker to match the version of sbt-scalajs
-        "org.scala-js" %% "scalajs-linker" % scalaJSVersion
+        "org.scala-js" % s"scalajs-linker_${BuildInfo.scalaBinaryVersion}" % scalaJSVersion
       )
       val moduleDescriptor =
         lm.moduleDescriptor(dummyModuleID, dependencies, scalaModuleInfo = None)

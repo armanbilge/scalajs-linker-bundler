@@ -45,7 +45,7 @@ lazy val sbtPlugin = project
     name := "sbt-scalajs-linker-bundler",
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % scalaJSVersion),
     buildInfoPackage := "com.armanbilge.sbt.sjslinkerbundler",
-    buildInfoKeys += organization,
+    buildInfoKeys ++= Seq(organization, scalaBinaryVersion),
     buildInfoKeys += "coreModule" -> (core2_12 / moduleName).value,
     Test / test := {
       scripted.toTask("").value
